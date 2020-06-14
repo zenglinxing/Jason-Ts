@@ -93,7 +93,14 @@ class Trigonal():
                                        +2*self.a*self.c*np.cos(self.alpha)),
                                np.sqrt(self.a**2
                                        +self.c**2
-                                       -2*self.a*self.c*np.cos(self.alpha)),)
+                                       -2*self.a*self.c*np.cos(self.alpha)),
+                               np.sqrt(kite_long**2
+                                       +self.c**2
+                                       +2*kite_long*self.c*np.sin(self.theta)),
+                               np.sqrt(kite_long**2
+                                       +self.c**2
+                                       -2*kite_long*self.c*np.sin(self.theta)),
+                               np.sqrt(kite_short**2+self.c**2),)
                              ))
         length_angle=[ [self.a,(np.pi/2,0)],
                       [self.b,(np.pi/2,self.gamma)],
@@ -137,7 +144,23 @@ class Trigonal():
                                +self.c**2
                                -2*self.b*self.c*np.cos(self.beta)),
                        (np.arccos(h/kite_short),
-                        np.arcsin(h_d*np.sin(self.phi)/lin),)], ]
+                        np.arcsin(h_d*np.sin(self.phi)/lin),)],
+                      [np.sqrt(kite_long**2
+                               +self.c**2
+                               +2*kite_long*self.c*np.sin(self.theta)),
+                       (np.arctan((kite_long+h_d)/2),
+                        self.phi,)],
+                      [np.sqrt(kite_long**2
+                               +self.c**2
+                               -2*kite_long*self.c*np.sin(self.theta)),
+                       (np.arctan((kite_long-h_d)/2),
+                        self.phi,)],
+                      [np.sqrt(kite_short**2+self.c**2),
+                       (np.arccos(h/np.sqrt(kite_long**2+self.c**2)),
+                        (np.pi+self.gamma)/2-np.arctan(h_d/kite_short),)],
+                      [np.sqrt(kite_short**2+self.c**2),
+                       (np.arccos(h/np.sqrt(kite_long**2+self.c**2)),
+                        (self.gamma-np.pi)/2+np.arctan(h_d/kite_short),)]]
         length=() # lengths eliminating the closer
         l_=length_[0]
         length=(l_,)
