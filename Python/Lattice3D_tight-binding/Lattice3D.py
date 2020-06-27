@@ -393,10 +393,14 @@ savename: saved figure's name.
         .eps .jpg .png recommended
 ================================================================================
 '''
-def is_in_condition(point,condition):
+def is_in_condition(point,condition,err=10**-8):
     for i in condition:
+        l=np.sqrt(point[0]**2+point[1]**2+point[2]**2)
+        x=point[0]/l;y=point[1]/l;z=point[2]/l
+        dd=(point[0]*x+point[1]*y+point[2]*z)*err
         d=point[0]*i[0]+point[1]*i[1]+point[2]*i[2]+i[3]
-        if d>0:
+        d1=d-dd;d2=d+dd
+        if d>0 and d1>0 and d2>0:
             return False
     return True
 
@@ -458,7 +462,7 @@ def Wigner_Seitz_unit_cell_condition(vector):
             i=i+1
     return c
 
-def Plot3D_WS_cell(vector,n=100,
+def Plot3D_WS_cell(vector,n=100,err=10**-8,
                    show_point=True,show_line=False,
                    rstride=1,cstride=1,cmap='rainbow',
                    xlabel=None,ylabel=None,zlabel=None,
@@ -495,7 +499,7 @@ def Plot3D_WS_cell(vector,n=100,
                 k=0
                 while k<n:
                     if is_in_condition((rang[j],y_,rang[k]),
-                                       condition[:i]+condition[i+1:]):
+                                       condition[:i]+condition[i+1:],err=err):
                         z_m[-1].append(rang[k])
                     k=k+1
                 if z_m[-1]==[]:
@@ -523,7 +527,7 @@ def Plot3D_WS_cell(vector,n=100,
                 k=0
                 while k<n:
                     if is_in_condition((x_,rang[j],rang[k]),
-                                       condition[:i]+condition[i+1:]):
+                                       condition[:i]+condition[i+1:],err=err):
                         z_m[-1].append(rang[k])
                     k=k+1
                 if z_m[-1]==[]:
@@ -551,7 +555,7 @@ def Plot3D_WS_cell(vector,n=100,
                 k=0
                 while k<n:
                     if is_in_condition((rang[j],y_,rang[k],),
-                                       condition[:i]+condition[i+1:]):
+                                       condition[:i]+condition[i+1:],err=err):
                         z_m[-1].append(rang[k])
                     k=k+1
                 if z_m[-1]==[]:
@@ -575,7 +579,7 @@ def Plot3D_WS_cell(vector,n=100,
                 for k in rang:
                     z_temp=-( c[0]*j+c[1]*k+c[3] )/c[2]
                     if is_in_condition((j,k,z_temp),
-                                       condition[:i]+condition[i+1:]):
+                                       condition[:i]+condition[i+1:],err=err):
                         y_m[-1].append(k)
                 if y_m[-1]==[]:
                     x_m.pop();y_m.pop()
