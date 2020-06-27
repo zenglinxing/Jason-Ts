@@ -1,17 +1,51 @@
 import numpy as np
 
+def vec2angle(vec): # vec=(a,b,c)
+    projection=np.sqrt(vec[0]**2+vec[1]**2)
+    length=np.sqrt(vec[0]**2+vec[1]**2+vec[2]**2)
+    if vec[0]==0: # a=0
+        if vec[1]==0: # b=0
+            phi=0
+            theta=0 if vec[2]>=0 else np.pi
+        else: # b!=0
+            phi=np.pi/2*vec[1]/abs(vec[1])
+            if vec[2]==0:
+                theta=np.pi/2
+            else:
+                theta=np.arctan(abs(vec[1])/vec[2]) if vec[2]>0 else np.pi+np.arctan(abs(vec[1])/vec[2])
+    else: # a!=0
+        if vec[1]==0: # b=0
+            phi=0 if vec[0]>0 else np.pi
+            if vec[2]==0: # c=0
+                theta=np.pi/2
+            else: # c!=0
+                theta=np.arctan(abs(vec[0])/vec[2]) if vec[2]>0 else np.pi+np.arctan(abs(vec[0])/vec[2])
+        else: # b!=0
+            if vec[0]>0:
+                phi=np.arctan(vec[1]/vec[0])
+            else:
+                phi=vec[1]/abs(vec[1])*np.pi+np.arctan(vec[1]/vec[0])
+            if vec[2]==0:
+                theta=np.pi/2
+            else:
+                theta=np.arctan(projection/vec[2]) if vec[2]>0 else np.pi+np.arctan(projection/vec[2])
+    return theta,phi
+
 # t: tight binding energy
 # angle: shown as vector-convention. (gamma,theta,phi)
 # readian_type: True if angle input is in radian. Default False
 # err: if two lengths are close, regarded as the same (as the smaller one)
 class Trigonal():
-    def __init__(self,t=1,a=(1,1,1),
+    def __init__(self,t=1,t_reverse=None,a=(1,1,1),
                  angle=(90,0,0),radian_type=False,err=10**-8):
         # t
         if isinstance(t,(int,float,complex)):
             self.t=(t,)
         elif isinstance(t,(list,tuple)):
-            self.t=tuple(sorted(t))[::-1]
+            if t_reverse!=None:
+                self.t=tuple(sorted(t,reverse=t_reverse))
+            else:
+                self.t=tuple(t)
         else:
             raise TypeError('type of '+str(type(t))[8:-2]+' not supported')
         n_t=len(self.t)
@@ -44,123 +78,53 @@ class Trigonal():
         self.beta=np.arccos(np.dot(self.lattice[1],self.lattice[2])
                             /(np.linalg.norm(self.lattice[1])
                               *np.linalg.norm(self.lattice[2])))
-        self.angle_vector=(self.alpha,self.beta,self.gamma)
-        self.normal=(tuple(np.cross(self.lattice[0],self.lattice[1])),
-                     tuple(np.cross(self.lattice[1],self.lattice[2])),
-                     tuple(np.cross(self.lattice[2],self.lattice[0])))
-        self.V=np.dot(np.cross(np.array(self.lattice[0]),
-                               np.array(self.lattice[1])),
-                      np.array(self.lattice[2]))
-        self.V=abs(self.V)
+        self.angle_lattice=(self.alpha,self.beta,self.gamma)
+        self.vector=self.lattice
+        self.normal=(tuple(np.cross(self.vector[0],self.vector[1])),
+                     tuple(np.cross(self.vector[1],self.vector[2])),
+                     tuple(np.cross(self.vector[2],self.vector[0])))
+        self.V=abs(np.dot(np.cross(np.array(self.vector[0]),
+                                   np.array(self.vector[1])),
+                          np.array(self.vector[2])))
         self.lattice_V=self.V
+        V=(np.dot(np.cross(self.vector[1],
+                           self.vector[2]),
+                  np.array(self.vector[0])),
+           np.dot(np.cross(self.vector[2],
+                           self.vector[0]),
+                  np.array(self.vector[1])),
+           np.dot(np.cross(self.vector[0],
+                           self.vector[1]),
+                  np.array(self.vector[2])),)
         # reciprocal
-        self.reciprocal=(tuple(2*np.pi*np.array(self.normal[0])/self.V),
-                         tuple(2*np.pi*np.array(self.normal[1])/self.V),
-                         tuple(2*np.pi*np.array(self.normal[2])/self.V))
-        self.reciprocal_V=np.dot(np.cross(np.array(self.reciprocal[0]),
-                                          np.array(self.reciprocal[1])),
-                                 np.array(self.reciprocal[2]))
+        self.reciprocal=(tuple(2*np.pi*np.array(self.normal[1])/V[0]),
+                         tuple(2*np.pi*np.array(self.normal[2])/V[1]),
+                         tuple(2*np.pi*np.array(self.normal[0])/V[2]),)
+        self.reciprocal_V=abs(np.dot(np.cross(np.array(self.reciprocal[0]),
+                                              np.array(self.reciprocal[1])),
+                                     np.array(self.reciprocal[2])))
         # order
-        # all lengths
-        kite_long=np.sqrt(self.a**2
-                          +self.b**2
-                          +2*self.a*self.b*np.cos(self.gamma))
-        kite_short=np.sqrt(self.a**2
-                           +self.b**2
-                           -2*self.a*self.b*np.cos(self.gamma))
-        h=self.c*np.cos(self.theta)
-        h_d=self.c*np.sin(self.theta)
-        lin=np.sqrt( self.b**2
-                    +h_d**2
-                    -2*self.b*h_d*np.cos(self.phi) )
-        length_=tuple(sorted( (self.a,
-                               self.b,
-                               self.c,
-                               np.sqrt(self.a**2
-                                       +self.b**2
-                                       +2*self.a*self.b*np.cos(self.gamma)),
-                               np.sqrt(self.a**2
-                                       +self.b**2
-                                       -2*self.a*self.b*np.cos(self.gamma)),
-                               np.sqrt(self.a**2
-                                       +self.c**2
-                                       +2*self.a*self.c*np.cos(self.beta)),
-                               np.sqrt(self.a**2
-                                       +self.c**2
-                                       -2*self.a*self.c*np.cos(self.beta)),
-                               np.sqrt(self.a**2
-                                       +self.c**2
-                                       +2*self.a*self.c*np.cos(self.alpha)),
-                               np.sqrt(self.a**2
-                                       +self.c**2
-                                       -2*self.a*self.c*np.cos(self.alpha)),
-                               np.sqrt(kite_long**2
-                                       +self.c**2
-                                       +2*kite_long*self.c*np.sin(self.theta)),
-                               np.sqrt(kite_long**2
-                                       +self.c**2
-                                       -2*kite_long*self.c*np.sin(self.theta)),
-                               np.sqrt(kite_short**2+self.c**2),)
-                             ))
-        length_angle=[ [self.a,(np.pi/2,0)],
-                      [self.b,(np.pi/2,self.gamma)],
-                      [self.c,(self.theta,self.phi)],
-                      [np.sqrt(self.a**2 # a,b
-                               +self.b**2
-                               +2*self.a*self.b*np.cos(self.gamma)),
-                       (np.pi/2,self.phi/2)],
-                      [np.sqrt(self.a**2 # -a,b
-                               +self.b**2
-                               -2*self.a*self.b*np.cos(self.gamma)),
-                       (np.pi/2,self.phi/2+np.pi/2)],
-                      [np.sqrt(self.a**2 # a,c
-                               +self.b**2
-                               +2*self.a*self.b*np.cos(self.alpha)),
-                       (np.arccos(h/kite_long),
-                        np.arctan(self.c*np.sin(self.theta)*np.sin(self.phi)
-                                  /(self.c
-                                    *np.sin(self.theta)
-                                    *np.sin(self.phi)+self.a)),)],
-                      [np.sqrt(self.a**2 # -a,c
-                               +self.b**2
-                               -2*self.a*self.b*np.cos(self.alpha)),
-                       (np.arccos(h/kite_short),
-                        np.arctan(self.c*np.sin(self.theta)*np.sin(self.phi)
-                                  /(self.c
-                                    *np.sin(self.theta)
-                                    *np.sin(self.phi)-self.a)),)],
-                      [np.sqrt(self.b**2 # b,c
-                               +self.c**2
-                               +2*self.b*self.c*np.cos(self.beta)),
-                       (np.arccos(h/kite_long),
-                        self.gamma-np.arctan(self.c
-                                             *np.sin(self.theta)
-                                             *np.sin(self.phi)
-                                             /(self.c
-                                               *np.sin(self.theta)
-                                               *np.sin(self.phi)
-                                               -self.a)),)],
-                      [np.sqrt(self.b**2 # -b,c
-                               +self.c**2
-                               -2*self.b*self.c*np.cos(self.beta)),
-                       (np.arccos(h/kite_short),
-                        np.arcsin(h_d*np.sin(self.phi)/lin),)],
-                      [np.sqrt(kite_long**2
-                               +self.c**2
-                               +2*kite_long*self.c*np.sin(self.theta)),
-                       (np.arctan((kite_long+h_d)/2),
-                        self.phi,)],
-                      [np.sqrt(kite_long**2
-                               +self.c**2
-                               -2*kite_long*self.c*np.sin(self.theta)),
-                       (np.arctan((kite_long-h_d)/2),
-                        self.phi,)],
-                      [np.sqrt(kite_short**2+self.c**2),
-                       (np.arccos(h/np.sqrt(kite_long**2+self.c**2)),
-                        (np.pi+self.gamma)/2-np.arctan(h_d/kite_short),)],
-                      [np.sqrt(kite_short**2+self.c**2),
-                       (np.arccos(h/np.sqrt(kite_long**2+self.c**2)),
-                        (self.gamma-np.pi)/2+np.arctan(h_d/kite_short),)]]
+        # lengths of lattice's edge
+        lengths=tuple(np.linalg.norm(i) for i in self.lattice)
+        n_lengths=np.ceil(max(lengths)/min(lengths))
+        # lattice in (-n,n) will be considered
+        n=int(2*n_t*n_lengths)
+        # list all the possible vectors that may in the neighbor
+        possible=[]
+        length_=[]
+        length_angle=[]
+        for h in range(-n,n+1):
+            for k in range(-n,n+1):
+                for l in range(-n,n+1):
+                    if (h,k,l)==(0,0,0):
+                        continue
+                    possible.append(tuple( h*np.array(self.lattice[0])
+                                          +k*np.array(self.lattice[1])
+                                          +l*np.array(self.lattice[2]) ))
+                    length_.append( np.linalg.norm(possible[-1]) )
+                    length_angle.append((length_[-1],
+                                         vec2angle(possible[-1]),))
+        length_=tuple(sorted(tuple(set(length_))))
         length=() # lengths eliminating the closer
         l_=length_[0]
         length=(l_,)
@@ -169,11 +133,8 @@ class Trigonal():
         for j in length_angle:
             if l_==j[0]:
                 dic[l_]=dic[l_]+(j[1],)
-        pre=l_
         for i in length_[1:]:
-            if l_==i or i==pre:
-                continue
-            if abs(i-l_)<=err and i-l_!=0:
+            if abs(i-l_)<=err:
                 for j in length_angle:
                     if i==j[0]:
                         dic[l_]=dic[l_]+(j[1],)
@@ -184,7 +145,6 @@ class Trigonal():
                         dic[i]=dic[i]+(j[1],)
                 length=length+(i,)
                 l_=i
-            pre=i
         n_l=len(length)
         n=min(n_l,n_t)
         order=()

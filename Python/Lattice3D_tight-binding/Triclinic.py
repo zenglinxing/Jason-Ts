@@ -35,9 +35,9 @@ def vec2angle(vec): # vec=(a,b,c)
 # angle: shown as vector-convention. (gamma,theta,phi)
 # readian_type: True if angle input is in radian. Default False
 # err: if two lengths are close, regarded as the same (as the smaller one)
-class Hexagonal():
+class Triclinic():
     def __init__(self,t=1,t_reverse=None,a=(1,1,1),
-                 angle=(120,0,0),radian_type=False,err=10**-8):
+                 angle=(90,0,0),radian_type=False,err=10**-8):
         # t
         if isinstance(t,(int,float,complex)):
             self.t=(t,)
@@ -79,18 +79,14 @@ class Hexagonal():
                             /(np.linalg.norm(self.lattice[1])
                               *np.linalg.norm(self.lattice[2])))
         self.angle_lattice=(self.alpha,self.beta,self.gamma)
-        self.vector=((self.a+1/2*self.b,-self.b*np.sqrt(3)/2,0),
-                     (self.a-self.b,self.b*np.sqrt(3),0),
-                     (0,0,self.c),)
+        self.vector=self.lattice
         self.normal=(tuple(np.cross(self.vector[0],self.vector[1])),
                      tuple(np.cross(self.vector[1],self.vector[2])),
                      tuple(np.cross(self.vector[2],self.vector[0])))
         self.V=abs(np.dot(np.cross(np.array(self.vector[0]),
                                    np.array(self.vector[1])),
                           np.array(self.vector[2])))
-        self.lattice_V=3*abs(np.dot(np.cross(np.array(self.lattice[0]),
-                                             np.array(self.lattice[1])),
-                                    np.array(self.lattice[2])))
+        self.lattice_V=self.V
         V=(np.dot(np.cross(self.vector[1],
                            self.vector[2]),
                   np.array(self.vector[0])),
@@ -121,40 +117,10 @@ class Hexagonal():
             for k in range(-n,n+1):
                 for l in range(-n,n+1):
                     if (h,k,l)==(0,0,0):
-                        possible.append(tuple( h*np.array(self.vector[0])
-                                              +k*np.array(self.vector[1])
-                                              +l*np.array(self.vector[2])
-                                              +np.array(self.lattice[0]) ))
-                        length_.append( np.linalg.norm(possible[-1]) )
-                        length_angle.append((length_[-1],
-                                             vec2angle(possible[-1]),))
-                        possible.append(tuple( h*np.array(self.vector[0])
-                                              +k*np.array(self.vector[1])
-                                              +l*np.array(self.vector[2])
-                                              +np.array(self.lattice[0])
-                                              +np.array(self.lattice[1]) ))
-                        length_.append( np.linalg.norm(possible[-1]) )
-                        length_angle.append((length_[-1],
-                                             vec2angle(possible[-1]),))
                         continue
-                    possible.append(tuple( h*np.array(self.vector[0])
-                                          +k*np.array(self.vector[1])
-                                          +l*np.array(self.vector[2]) ))
-                    length_.append( np.linalg.norm(possible[-1]) )
-                    length_angle.append((length_[-1],
-                                         vec2angle(possible[-1]),))
-                    possible.append(tuple( h*np.array(self.vector[0])
-                                          +k*np.array(self.vector[1])
-                                          +l*np.array(self.vector[2])
-                                          +np.array(self.lattice[0]) ))
-                    length_.append( np.linalg.norm(possible[-1]) )
-                    length_angle.append((length_[-1],
-                                         vec2angle(possible[-1]),))
-                    possible.append(tuple( h*np.array(self.vector[0])
-                                          +k*np.array(self.vector[1])
-                                          +l*np.array(self.vector[2])
-                                          +np.array(self.lattice[0])
-                                          +np.array(self.lattice[1]) ))
+                    possible.append(tuple( h*np.array(self.lattice[0])
+                                          +k*np.array(self.lattice[1])
+                                          +l*np.array(self.lattice[2]) ))
                     length_.append( np.linalg.norm(possible[-1]) )
                     length_angle.append((length_[-1],
                                          vec2angle(possible[-1]),))
