@@ -445,6 +445,7 @@ def Wigner_Seitz_unit_cell_condition(vector):
         n=n+1
     # step 2: eliminate the ineffective condition(s)
     c=[]
+    i=0
     while i<n_condition:
         if is_in_condition(tuple(np.array(condition[i][:3])/2),
                            condition[:i]+condition[i+1:]):
